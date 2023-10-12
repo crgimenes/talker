@@ -6,6 +6,9 @@ import (
 )
 
 type Config struct {
+	Listen      string `ini:"listen" cfg:"listen" cfgDefault:"0.0.0.0:2200"`
+	DatabaseURL string `ini:"database_url" cfg:"database_url" cfgRequired:"true"`
+	FilesPath   string `ini:"files_path" cfg:"files_path" cfgRequired:"true"`
 }
 
 var CFG *Config
