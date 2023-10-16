@@ -3,6 +3,7 @@ package session
 import (
 	"crypto/rand"
 	"net/http"
+	"talker/config"
 	"time"
 )
 
@@ -62,15 +63,15 @@ func (c *Control) Delete(w http.ResponseWriter, id string) {
 }
 
 func (c *Control) Save(w http.ResponseWriter, id string, sessionData *SessionData) {
-	expireAt := time.Now().Add(3 * time.Hour)
+	expireAt := time.Now().Add(time.Duration(config.CFG.MaxAgeSession) * time.Second)
 	cookie := &http.Cookie{
 		Path:     "/",
 		Name:     c.cookieName,
 		Value:    id,
 		Expires:  expireAt,
-		Secure:   true,
+		Secure:   config.CFG.SecureCookie,
 		HttpOnly: true,
-		SameSite: http.SameSiteDefaultMode,
+		SameSite: http.SameSiteStrictMode,
 	}
 
 	sessionData.ExpireAt = expireAt
