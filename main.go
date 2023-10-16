@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -19,13 +20,17 @@ var (
 
 	//go:embed assets/*
 	assets embed.FS
+
+	//go:embed templates/*
+	templates embed.FS
+
+	tmpl *template.Template
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	sid, sd, ok := session.SC.Get(r)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
+		sid, sd = session.SC.Create()
 	}
 
 	// renew session
@@ -33,18 +38,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	//////////////////////////
 
-	index, err := assets.ReadFile("assets/index.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	t, err := template.New("index.html").Parse(string(index))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// exec template
-	err = t.Execute(w, nil)
+	err := tmpl.ExecuteTemplate(w, "main.gohtml", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +92,17 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	err := config.Load()
+	// templates FS
+	fstemplates, err := fs.Sub(templates, ".")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// print
+
+	tmpl = template.Must(template.ParseFS(fstemplates, "templates/*.gohtml"))
+
+	err = config.Load()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
